@@ -2,17 +2,35 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const AssignmentSchema = new Schema({
+  groupID: {
+    type: String,
+    require: true
+  },
+  doneUsers: {
+    type: [String],
+    require: true
+  },
   title: {
     type: String,
     require: true
   },
-  userID: {
+  description: {
     type: String,
-    require: true
+    require: false,
+    default: ""
   },
-  dateCreated: {
+  createdOn: {
     type: Date,
     default: new Date()
+  },
+  dueOn: {
+    type: Date,
+    require: true
+  },
+  categories: {
+    type: [String],
+    require: false,
+    default: []
   }
 });
 

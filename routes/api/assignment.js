@@ -4,11 +4,11 @@ const router = express.Router();
 const Assignment = require("../../models/Assignment");
 
 /*
-@route  GET api/assignment
+@route  GET api/assignment/findAll
 @desc   Get assignments
 @access Public for now...
 */
-router.get('/', (req, res)=>{
+router.get('/findAll', (req, res)=>{
   Assignment.find()
     .sort({date: -1})
     .then(assignments=> res.json(assignments))
@@ -16,7 +16,7 @@ router.get('/', (req, res)=>{
 
 
 /*
-@route  POST api/assignment
+@route  POST api/assignment/add
 @desc   Create an assignments
 @access Public for now...
 */
