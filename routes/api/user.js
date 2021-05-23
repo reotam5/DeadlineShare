@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-
 const User = require("../../models/User");
 
 /*
@@ -18,30 +17,16 @@ router.get("/find", (req, res) => {
 });
 
 /*
-@route  POST api/user/add
-@desc   Create an user
-@access Public
-*/
-router.post("/add", (req, res) => {
-  const newUser = new User({
-    email: req.body.email,
-    name: req.body.name,
-  });
-  newUser
-    .save()
-    .then((user) => res.json(user))
-    .catch((error) => {
-      res.status(403).json({ error: error });
-    });
-});
-
-/*
 @route  POST api/user/update/:email
 @desc   update an user
 @access Public
 */
 router.post("/update/:email", (req, res) => {
-  User.findOneAndUpdate({ email: req.params.email }, { name: req.body.name }, { new: true })
+  User.findOneAndUpdate(
+    { email: req.params.email },
+    { name: req.body.name },
+    { new: true }
+  )
     .then((user) => {
       res.json(user);
     })
