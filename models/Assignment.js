@@ -8,7 +8,8 @@ const AssignmentSchema = new Schema({
   },
   doneUsers: {
     type: [String],
-    require: true
+    require: false,
+    default: []
   },
   title: {
     type: String,
@@ -25,7 +26,8 @@ const AssignmentSchema = new Schema({
   },
   dueOn: {
     type: Date,
-    require: true
+    require: true,
+    default: new Date()
   },
   categories: {
     type: [String],

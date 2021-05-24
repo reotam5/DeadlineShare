@@ -190,7 +190,7 @@ router.delete("/delete", protectRoute, (req, res) => {
     "userID": "myUserID"
 }
 */
-router.post("/editor", (req, res) => {
+router.post("/editor", protectRoute, (req, res) => {
   if (req.body.userID == req.user._id) return res.status(400).json({ success: false });
   Group
     .findById(req.body.groupID)
@@ -199,7 +199,7 @@ router.post("/editor", (req, res) => {
       if (!group.members.includes(req.body.userID)) return res.status(403).json({ success: false });
       
       group
-        .updateOne({$pull: { members: req.body.userID, editors: req.body.userID, owners: req.body.userID } }, { new: true })
+        .updateOne({$pull: { members: req.body.userID, editors: req.body.userID } }, { new: true })
         .then(()=>{
           group
             .updateOne({$push: { members: req.body.userID, editors: req.body.userID } }, { new: true })
@@ -220,7 +220,7 @@ router.post("/editor", (req, res) => {
     "userID": "myUserID"
 }
 */
-router.post("/member", (req, res) => {
+router.post("/member", protectRoute, (req, res) => {
   if (req.body.userID == req.user._id) return res.status(400).json({ success: false });
   Group
     .findById(req.body.groupID)
@@ -250,7 +250,7 @@ router.post("/member", (req, res) => {
     "userID": "myUserID"
 }
 */
-router.post("/owner", (req, res) => {
+router.post("/owner", protectRoute, (req, res) => {
   if (req.body.userID == req.user._id) return res.status(400).json({ success: false });
   Group
     .findById(req.body.groupID)
