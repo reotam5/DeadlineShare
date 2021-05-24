@@ -8,17 +8,30 @@ const GroupSchema = new Schema({
   },
   name: {
     type: String,
-    require: true
+    require: true,
+    default: "Untitled group"
   },
   owners: {
     type: [String],
-    require: true
+    require: true,
+    default: []
+  },
+  editors: {
+    type: [String],
+    require: true,
+    default: []
   },
   members: {
     type: [String],
-    require: true
+    require: true,
+    default: []
   },
   categories: {
+    type: [String],
+    require: false,
+    default: []
+  },
+  invites: {
     type: [String],
     require: false,
     default: []

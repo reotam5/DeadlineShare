@@ -1,163 +1,273 @@
 const express = require("express");
 const router = express.Router();
-
 const Group = require("../../models/Group");
-
-/*
-@route  GET api/group/findByUser/:userID
-@desc   Get find all groups that user(id) belong to
-@access Public for now...
-*/
-router.get("/findByUser/:userID", (req, res) => {
-  Group
-    .find({ members: req.params.userID })
-    .then(groups=>res.json(groups))
-    .catch(error=>res.json({error: error}))
-});
-
-/*
-@route  GET api/group/findOne/:id
-@desc   Get find all groups that user(id) belong to
-@access Public for now...
-*/
-router.get("/findOne/:id", (req, res) => {
-  Group
-    .findOne({ _id: req.params.id })
-    .then(group=>res.json(group))
-    .catch(error=>res.json({error: error}))
-});
+const protectRoute = require("../../middleware/protectRoute");
+const { findById } = require("../../models/Group");
 
 /*
 @route  POST api/group/add
 @desc   Add a group
-@access Public for now...
+@access Private
 {
-  "ownerID": "myUserID",
-  "members": [], //notice owner is not in members
+  "name": "groupName"
   "categories": ["category1"] //this is optional
 }
 */
-router.post("/add", (req, res) => {
-  //I should probably check if this user is actually ownerID
+router.post("/add", protectRoute, (req, res) => {
   const newGroup = new Group({
-    name: req.body.name,
-    owners: req.body.owners,
-    members: [...req.body.owners, ...req.body.members],
+    name: req.body.name || "Untitled group",
+    owners: [req.user._id],
+    editors: [req.user._id] ,
+    members: [req.user._id],
     categories: req.body.categories || []
   })
   newGroup
     .save()
-    .then(group=>res.json(group))
-    .catch((error) => res.status(403).json({ error: error }));
+    .then(group=>res.json({group: group}))
+    .catch((error) => res.status(500).json({ success: false }));
 });
 
+
 /*
-@route  DELETE api/group/deleteGroup/:id
-@desc   Delete a group with id
-@access Public for now...
+@route  GET api/group/find
+@desc   Get find all groups that I belong to
+@access Private
 */
-router.delete("/deleteGroup/:id", (req, res) => {
-  //I should check if current user is owner of this group
-  Group.deleteOne({ _id: req.params.id })
-    .then(()=>res.json({success: true}))
-    .catch(()=>res.json({success: false}))
+router.get("/find", protectRoute, (req, res) => {
+  Group
+    .find({ members: req.user._id })
+    .then(groups=>res.json({groups: groups}))
+    .catch(error=>res.status(500).json({success: false}))
 });
 
+
 /*
-@route  DELETE api/group/deleteUser/:id
-@desc   Delete a user from group(id)
-@access Public for now...
+@route  POST api/group/invite
+@desc   Invite a user to group
+@access Private
 {
-  "userID": "myUserID"
+    "groupID": "",
+    "userID": ""
 }
 */
-router.delete("/deleteUser/:id", (req, res) => {
-  //I should check if current user is owner or himself
+router.post("/invite", protectRoute, (req, res) => {
   Group
-    .findOneAndUpdate({ _id: req.params.id }, {$pull: {members: req.body.userID, owners: req.body.userID}}, {new: true})
+    .findById(req.body.groupID)
     .then(group=>{
-      res.json(group)
+      if (!group.members.includes(req.user._id)) return res.status(403).json({ success: false });
+      
+      group
+        .updateOne({$push: { invites: req.body.userID }}, { new: true })
+        .then(group=>{
+          res.json({success: true});
+        })
+        .catch(error=>res.status(500).json({success: false}))
     })
-    .catch((error)=>res.json({error: error}))
+    .catch((error)=>res.status(500).json({success: false}))
 });
 
-/*
-@route  DELETE api/group/deleteOwner/:id
-@desc   Delete a user from owner in group(id)
-@access Public for now...
-{
-  "userID": "myUserID"
-}
-*/
-router.delete("/deleteOwner/:id", (req, res) => {
-  //I should check if current user is owner or himself
-  Group
-    .findOneAndUpdate({ _id: req.params.id }, {$pull: {owners: req.body.userID}}, {new: true})
-    .then(group=>{res.json(group)})
-    .catch((error)=>res.json({error: error}))
-});
 
 /*
-@route  POST api/group/addUser/:id
-@desc   Add a user to group(id)
-@access Public for now...
-{
-  "userID": "myUserID"
-}
+@route  GET api/group/findInvitation
+@desc   Get find all invitation
+@access Private
 */
-router.post("/addUser/:id", (req, res) => {
+router.get("/findInvitation", protectRoute, (req, res) => {
   Group
-    .findOneAndUpdate({ _id: req.params.id, members: {$not: {$elemMatch: {$in: [req.body.userID]}}}}, {$push: {members: req.body.userID}}, {new: true})
-    .then(group=>res.json(group))
-    .catch((error)=>res.json({error: error}))
+    .find({ invites: req.user.email })
+    .then(groups=>res.json({groups: groups}))
+    .catch(error=>res.json({success: false}))
 });
 
+
 /*
-@route  POST api/group/addOwner/:id
-@desc   Add a owner to group(id)
-@access Public for now...
+@route  POST api/group/leave
+@desc   Leave the group
+@access Private
 {
-  "userID": "myUserID"
+  "groupID": "groupID"
 }
 */
-router.post("/addOwner/:id", (req, res) => {
+router.post("/leave", protectRoute, (req, res) => {
   Group
-    .findOneAndUpdate({ _id: req.params.id, members: {$not: {$elemMatch: {$in: [req.body.userID]}}}}, {$push: {members: req.body.userID}}, {new: true})
-    .then(()=>{
-      Group.findOneAndUpdate({ _id: req.params.id, owners: {$not: {$elemMatch: {$in: [req.body.userID]}}}}, {$push: {owners: req.body.userID}}, {new: true})
-      .then((group)=>res.json(group))
+    .findById(req.body.groupID)
+    .then(group=>{
+      if (group.owners.includes(req.user._id)) res.status(400).json({ success: false, msg: "Owner cannot leave groups. Consider deleting the group instead." })
+
+      group
+        .updateOne({$pull: {members: req.user._id, owners: req.user._id, editors: req.user._id}}, {new: true})
+        .then(()=>{return res.json({ success: true })})
+        .catch((error)=>{ return res.status(403).json({success: false})})
     })
-    .catch((error)=>res.json({error: error}))
+    .catch((error)=>{return res.status(403).json({success: false})})
+});
+
+
+/*
+@route  POST api/group/kick
+@desc   Kick a member from the group
+@access Private
+{
+  "groupID": "groupID",
+  "userID": "userID"
+}
+*/
+router.post("/kick", protectRoute, (req, res) => {
+  if (req.body.userID === req.user._id) return res.status(400).json({ success: false });
+  Group
+    .findById(req.body.groupID)
+    .then(group=>{
+      if (!group.owners.includes(req.user._id)) return res.status(403).json({ success: false });
+      
+      group
+        .updateOne({$pull: {members: req.body.userID, owners: req.body.userID, editors: req.body.userID}}, { new: true })
+        .then(group=>{
+          res.json({success: true});
+        })
+        .catch(error=>res.json({success: false}))
+    })
+    .catch((error)=>res.json({success: false}))
+});
+
+
+/*
+@route  POST api/group/acceptInvite/
+@desc   Accept invite
+@access Private
+{
+    "groupID": "group"
+}
+*/
+router.post("/acceptInvite", protectRoute, (req, res) => {
+  Group
+    .findById(req.body.groupID)
+    .then(group=>{
+      if (!group.invites.includes(req.user.email)) return res.status(403).json({ success: false });
+      
+      group
+        .updateOne({$pull: { members: req.user._id, editors: req.user._id, owners: req.user._id, invites: req.user.email}}, { new: true })
+        .then(()=>{
+          group
+            .updateOne({$push: { members: req.user._id }}, { new: true })
+            .then(group=>{
+              res.json({success: true});
+            })
+            .catch(error=>res.status(500).json({success: false}))
+        })
+        .catch(error=>res.status(500).json({success: false}))
+    })
+    .catch((error)=>res.status(500).json({success: false}))
+});
+
+
+/*
+@route  DELETE api/group/delete
+@desc   Delete a group with id
+@access Private
+{
+    "groupID": "groupID"
+}
+*/
+router.delete("/delete", protectRoute, (req, res) => {
+  Group
+    .findById(req.body.groupID)
+    .then(group=>{
+      if (!group.owners.includes(req.user._id)) return res.status(403).json({ success: false });
+      
+      group
+        .remove()
+        .then(()=>{res.json({success: true})})
+    })
+    .catch((error)=>res.status(500).json({success: false}))
 });
 
 /*
-@route  POST api/group/addCategory/:id
-@desc   Add categories to group(id)
-@access Public for now...
+@route  POST api/group/editor
+@desc   make a user editor
+@access Private
 {
-  "category": "category1"
+    "groupID" : "groupID",
+    "userID": "myUserID"
 }
 */
-router.post("/addCategory/:id", (req, res) => {
+router.post("/editor", (req, res) => {
+  if (req.body.userID == req.user._id) return res.status(400).json({ success: false });
   Group
-    .findOneAndUpdate({ _id: req.params.id, categories: {$not: {$elemMatch: {$in: [req.body.category]}}}}, {$push: {categories: req.body.category}}, {new: true})
-    .then(group=>{res.json(group)})
-    .catch((error)=>res.json({error: error}))
+    .findById(req.body.groupID)
+    .then(group=>{
+      if (!group.owners.includes(req.user._id)) return res.status(403).json({ success: false });
+      if (!group.members.includes(req.body.userID)) return res.status(403).json({ success: false });
+      
+      group
+        .updateOne({$pull: { members: req.body.userID, editors: req.body.userID, owners: req.body.userID } }, { new: true })
+        .then(()=>{
+          group
+            .updateOne({$push: { members: req.body.userID, editors: req.body.userID } }, { new: true })
+            .then(()=>res.json({success: true}))
+        })
+        .catch(error=>res.status(403).json({success: false}))
+    })
+    .catch((error)=>res.status(403).json({success: false}))
 });
 
+
 /*
-@route  DELETE api/group/deleteCategory/:id
-@desc   Delete a category from group(id)
-@access Public for now...
+@route  POST api/group/member/:id
+@desc   make a user member
+@access Private
 {
-  "category": "categoryName"
+    "groupID" : "groupID",
+    "userID": "myUserID"
 }
 */
-router.post("/deleteCategory/:id", (req, res) => {
+router.post("/member", (req, res) => {
+  if (req.body.userID == req.user._id) return res.status(400).json({ success: false });
   Group
-    .findOneAndUpdate({ _id: req.params.id }, {$pull: {categories: req.body.category}}, {new: true})
-    .then(group=>{res.json(group)})
-    .catch((error)=>res.json({error: error}))
+    .findById(req.body.groupID)
+    .then(group=>{
+      if (!group.owners.includes(req.user._id)) return res.status(403).json({ success: false });
+      if (!group.members.includes(req.body.userID)) return res.status(403).json({ success: false });
+      
+      group
+        .updateOne({$pull: { members: req.body.userID, editors: req.body.userID, owners: req.body.userID } }, { new: true })
+        .then(()=>{
+          group
+            .updateOne({$push: { members: req.body.userID } }, { new: true })
+            .then(()=>res.json({success: true}))
+        })
+        .catch(error=>res.status(403).json({success: false}))
+    })
+    .catch((error)=>res.status(403).json({success: false}))
+});
+
+
+/*
+@route  POST api/group/owner/:id
+@desc   make a user owner
+@access Private
+{
+    "groupID" : "groupID",
+    "userID": "myUserID"
+}
+*/
+router.post("/owner", (req, res) => {
+  if (req.body.userID == req.user._id) return res.status(400).json({ success: false });
+  Group
+    .findById(req.body.groupID)
+    .then(group=>{
+      if (!group.owners.includes(req.user._id)) return res.status(403).json({ success: false });
+      if (!group.members.includes(req.body.userID)) return res.status(403).json({ success: false });
+      
+      group
+        .updateOne({$pull: { members: req.body.userID, editors: req.body.userID, owners: req.body.userID } }, { new: true })
+        .then(()=>{
+          group
+            .updateOne({$push: { members: req.body.userID, editors: req.body.userID, owners: req.body.userID } }, { new: true })
+            .then(()=>res.json({success: true}))
+        })
+        .catch(error=>res.status(403).json({success: false}))
+    })
+    .catch((error)=>res.status(403).json({success: false}))
 });
 
 
