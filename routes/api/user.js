@@ -64,4 +64,19 @@ router.post("/update", protectRoute, (req, res) => {
 });
 
 
+/*
+@route  GET api/user/verifyEmail/:email
+@desc   checks if the email is already taken
+@access Public
+*/
+router.get("/verifyEmail/:email", (req, res) => {
+  const { email } = req.params;
+  User.findOne({ email: email })
+    .then(user=>{
+      if(user) return res.json({ isValid: false });
+      res.json({ isValid: true });
+    })
+    .catch(()=>{return res.status(500).json({ success: false, msg:"Error occured when retrieving user." })})
+});
+
 module.exports = router;

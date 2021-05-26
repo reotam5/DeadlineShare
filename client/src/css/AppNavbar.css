@@ -1,0 +1,24 @@
+.sideBar{
+  width: 180px;
+  position: fixed;
+  left: -200px;
+  transition-duration: 0.2s;
+}
+
+.presentation{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: transparent;
+}
+
+.rs-modal-xs{
+  width: 80% !important;
+}
+
+.rs-modal-footer{
+  display: flex;
+  justify-content: space-between;
+}

@@ -34,8 +34,8 @@ router.post("/register", (req, res) => {
     });
 
     newUser.save().then((user) => {
-      req.login(user, (err)=>{
-        if (err) return res.json({error: err}); 
+      req.login(user, (err) => {
+        if (err) return res.json({ error: err });
         res.json({
           user: {
             _id: req.user._id,
@@ -53,16 +53,13 @@ router.post("/register", (req, res) => {
 @desc   authenticate user
 @access Private
 */
-router.post("/login", passport.authenticate("local"), (req, res)=>{
+router.post("/login", passport.authenticate("local"), (req, res) => {
   res.json({
-    user: {
-      _id: req.user._id,
-      name: req.user.name,
-      email: req.user.email
-    }
+    _id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
   });
 });
-
 
 /*
 @route  POST api/auth/logout
@@ -74,18 +71,19 @@ router.post("/logout", (req, res) => {
   res.json({ success: true });
 });
 
-
 /*
 @route  DELETE api/auth/delete
 @desc   Delete user
 @access private
 */
-router.delete("/delete", protectRoute, (req, res)=>{
+router.delete("/delete", protectRoute, (req, res) => {
   User.findByIdAndDelete(req.user._id)
-    .then(()=>{ return res.json({ success: true }) })
-    .catch(()=>{ return res.json({ success: false }) })
+    .then(() => {
+      return res.json({ success: true });
+    })
+    .catch(() => {
+      return res.json({ success: false });
+    });
 });
-
-
 
 module.exports = router;
