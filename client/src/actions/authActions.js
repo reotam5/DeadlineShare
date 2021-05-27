@@ -28,12 +28,30 @@ export const login = (email, password) => (dispatch) => {
 
   axios
     .post("/api/auth/login", body, config)
-    .then((res) =>
+    .then((res) => {
       dispatch({
         type: USER_LOADED,
         payload: res.data,
-      })
-    )
+      });
+    })
+    .catch((error) => {
+      dispatch(returnErrors(error.response.data, error.response.status));
+      dispatch({ type: LOGIN_FAIL });
+    });
+};
+
+export const loadUser = () => (dispatch) => {
+  //loading user
+  dispatch({ type: USER_LOADING });
+
+  axios
+    .post("/api/auth/loadUser")
+    .then((res) => {
+      dispatch({
+        type: USER_LOADED,
+        payload: res.data,
+      });
+    })
     .catch((error) => {
       dispatch(returnErrors(error.response.data, error.response.status));
       dispatch({ type: AUTH_ERROR });
@@ -69,5 +87,19 @@ export const register = (name, email, password) => (dispatch) => {
         )
       );
       dispatch({ type: REGISTER_FAIL });
+    });
+};
+
+export const logout = () => (dispatch) => {
+  axios
+    .post("/api/auth/logout")
+    .then((res) => {
+      dispatch({
+        type: LOGOUT_SUCCESS,
+      });
+    })
+    .catch((error) => {
+      dispatch(returnErrors(error.response.data, error.response.status));
+      dispatch({ type: AUTH_ERROR });
     });
 };

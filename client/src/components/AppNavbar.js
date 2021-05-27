@@ -4,13 +4,11 @@ import "rsuite/lib/styles/index.less";
 import "../css/AppNavbar.css";
 import { useSelector, useDispatch } from "react-redux";
 import Login from "./Login";
+import { logout } from "../actions/authActions";
 
 function AppNavbar() {
   const auth = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-  useEffect(() => {
-    console.log(auth);
-  }, []);
 
   //handle login modal open/close
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -54,12 +52,18 @@ function AppNavbar() {
               </Nav.Item>
             </Nav>
             <Nav pullRight>
-              <Nav.Item
-                icon={<Icon icon="sign-in" />}
-                onClick={() => setIsLoginModalOpen(true)}
-              >
-                Login
-              </Nav.Item>
+              {auth.user !== null ? (
+                <Nav.Item icon={<Icon icon="user-info" />}>
+                  {auth.user.name}
+                </Nav.Item>
+              ) : (
+                <Nav.Item
+                  icon={<Icon icon="sign-in" />}
+                  onClick={() => setIsLoginModalOpen(true)}
+                >
+                  Login
+                </Nav.Item>
+              )}
             </Nav>
           </Navbar.Body>
         </Navbar>
@@ -73,23 +77,39 @@ function AppNavbar() {
         />
         <Sidenav style={{ height: "100vh" }}>
           <Sidenav.Body>
-            <Nav>
-              <Nav.Item
-                onSelect={toggeleSideBar}
-                icon={<Icon icon="dashboard" />}
-              >
-                Dashboard
-              </Nav.Item>
-              <Nav.Item
-                onSelect={toggeleSideBar}
-                icon={<Icon icon="calendar" />}
-              >
-                Calender
-              </Nav.Item>
-              <Nav.Item onSelect={toggeleSideBar} icon={<Icon icon="group" />}>
-                Group
-              </Nav.Item>
-            </Nav>
+            {auth.user !== null ? (
+              <Nav>
+                <Nav.Item
+                  onSelect={toggeleSideBar}
+                  icon={<Icon icon="dashboard" />}
+                >
+                  Dashboard
+                </Nav.Item>
+                <Nav.Item
+                  onSelect={toggeleSideBar}
+                  icon={<Icon icon="calendar" />}
+                >
+                  Calender
+                </Nav.Item>
+                <Nav.Item
+                  onSelect={toggeleSideBar}
+                  icon={<Icon icon="group" />}
+                >
+                  Group
+                </Nav.Item>
+                <Nav.Item
+                  onSelect={() => {
+                    dispatch(logout());
+                    toggeleSideBar();
+                  }}
+                  icon={<Icon icon="sign-out" />}
+                >
+                  Sign out
+                </Nav.Item>
+              </Nav>
+            ) : (
+              <></>
+            )}
           </Sidenav.Body>
         </Sidenav>
       </div>

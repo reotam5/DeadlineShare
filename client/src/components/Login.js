@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Button,
@@ -15,26 +15,16 @@ import { useSelector, useDispatch } from "react-redux";
 const { StringType } = Schema.Types;
 
 function Login({ isLoginModalOpen, setIsLoginModalOpen }) {
-  const dispatch = useDispatch();
-
   //register or login
   const [isLoginScreen, setIsLoginScreen] = useState(true);
 
-  //holding userInput fields.
-  const [formValues, setFormValues] = useState({});
-
-  //holds an error
-  const [error, setError] = useState([]);
-
-  //handles submit action
-  const handleSubmit = () => {
-    const { email, password, name } = formValues;
-    if (isLoginScreen) {
-      login(email, password)(dispatch);
-    } else {
-      register(name, email, password)(dispatch);
+  //close modal on loadUser
+  const auth = useSelector((state) => state.auth);
+  useEffect(() => {
+    if (auth.isAuthenticated && setIsLoginModalOpen) {
+      setIsLoginModalOpen(false);
     }
-  };
+  }, [auth]);
 
   return (
     <div className="modal-container">
@@ -48,9 +38,9 @@ function Login({ isLoginModalOpen, setIsLoginModalOpen }) {
         </Modal.Header>
         <Modal.Body>
           {isLoginScreen ? (
-            <LoginForm setFormValues={setFormValues} />
+            <LoginForm setIsLoginModalOpen={setIsLoginModalOpen} />
           ) : (
-            <RegisterForm setFormValues={setFormValues} />
+            <RegisterForm setIsLoginModalOpen={setIsLoginModalOpen} />
           )}
         </Modal.Body>
         <Modal.Footer>
@@ -65,29 +55,13 @@ function Login({ isLoginModalOpen, setIsLoginModalOpen }) {
               </Button>
             )}
           </div>
-          <div>
-            <Button
-              onClick={() => {
-                handleSubmit();
-              }}
-              appearance="primary"
-            >
-              Ok
-            </Button>
-            <Button
-              onClick={() => setIsLoginModalOpen(false)}
-              appearance="subtle"
-            >
-              Cancel
-            </Button>
-          </div>
         </Modal.Footer>
       </Modal>
     </div>
   );
 }
 
-function LoginForm({ setFormValues }) {
+function LoginForm({ setIsLoginModalOpen }) {
   //Login form rules
   const model = Schema.Model({
     email: StringType()
@@ -96,12 +70,21 @@ function LoginForm({ setFormValues }) {
     password: StringType().isRequired("This field is required."),
   });
 
+  //holding userInput fields.
+  const [formValues, setFormValues] = useState({});
+
+  //handle submit action
+  const dispatch = useDispatch();
+  const handleSubmit = () => {
+    const { email, password } = formValues;
+    dispatch(login(email, password));
+  };
+
   return (
     <div>
       <Form
         fluid
         model={model}
-        checkTrigger="blur"
         onChange={(formValues) => setFormValues(formValues)}
       >
         <FormGroup>
@@ -111,14 +94,26 @@ function LoginForm({ setFormValues }) {
 
         <FormGroup>
           <ControlLabel>Password </ControlLabel>
-          <FormControl checkAsync name="password" />
+          <FormControl checkAsync name="password" type="password" />
         </FormGroup>
+
+        <Button
+          onClick={() => {
+            handleSubmit();
+          }}
+          appearance="primary"
+        >
+          Ok
+        </Button>
+        <Button onClick={() => setIsLoginModalOpen(false)} appearance="subtle">
+          Cancel
+        </Button>
       </Form>
     </div>
   );
 }
 
-function RegisterForm({ setFormValues }) {
+function RegisterForm({ setIsLoginModalOpen }) {
   //Registration form rules
   const model = Schema.Model({
     email: StringType()
@@ -135,12 +130,21 @@ function RegisterForm({ setFormValues }) {
       .isRequired("This field is required"),
   });
 
+  //holding userInput fields.
+  const [formValues, setFormValues] = useState({});
+
+  //handle submit action
+  const dispatch = useDispatch();
+  const handleSubmit = () => {
+    const { email, password, name } = formValues;
+    dispatch(register(name, email, password));
+  };
+
   return (
     <div>
       <Form
         fluid
         model={model}
-        checkTrigger="blur"
         onChange={(formValues) => setFormValues(formValues)}
       >
         <FormGroup>
@@ -155,8 +159,20 @@ function RegisterForm({ setFormValues }) {
 
         <FormGroup>
           <ControlLabel>Password </ControlLabel>
-          <FormControl name="password" />
+          <FormControl name="password" type="password" />
         </FormGroup>
+
+        <Button
+          onClick={() => {
+            handleSubmit();
+          }}
+          appearance="primary"
+        >
+          Ok
+        </Button>
+        <Button onClick={() => setIsLoginModalOpen(false)} appearance="subtle">
+          Cancel
+        </Button>
       </Form>
     </div>
   );
