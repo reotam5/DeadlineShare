@@ -3,6 +3,7 @@
   position: fixed;
   left: -200px;
   transition-duration: 0.2s;
+  z-index: 5;
 }
 
 .presentation{

@@ -53,16 +53,12 @@ router.post("/register", (req, res) => {
 @desc   authenticate user
 @access Private
 */
-router.post("/login", (req, res, next) => {
-  passport.authenticate("local", (err, user, info) => {
-    if (err) return next(err);
-    if (!user) return res.status(401).json({ msg: info.message });
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-    });
-  })(req, res, next);
+router.post("/login", passport.authenticate("local"), (req, res) => {
+  res.json({
+    _id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
+  });
 });
 
 /*

@@ -4,39 +4,36 @@ const Schema = mongoose.Schema;
 const GroupSchema = new Schema({
   createdOn: {
     type: String,
-    default: new Date()
+    default: new Date(),
+  },
+  createdBy: {
+    type: String,
   },
   name: {
     type: String,
     require: true,
-    default: "Untitled group"
+    default: "Untitled group",
   },
   owners: {
     type: [String],
     require: true,
-    default: []
+    default: [],
   },
   editors: {
     type: [String],
     require: true,
-    default: []
+    default: [],
   },
   members: {
     type: [String],
     require: true,
-    default: []
-  },
-  categories: {
-    type: [String],
-    require: false,
-    default: []
+    default: [],
   },
   invites: {
     type: [String],
     require: false,
-    default: []
-  }
+    default: [],
+  },
 });
-
 
 module.exports = Group = mongoose.model("Group", GroupSchema);

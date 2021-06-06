@@ -10,23 +10,21 @@ const { findById } = require("../../models/Group");
 @access Private
 {
   "name": "groupName"
-  "categories": ["category1"] //this is optional
 }
 */
 router.post("/add", protectRoute, (req, res) => {
   const newGroup = new Group({
     name: req.body.name || "Untitled group",
+    createdBy: req.user.name,
     owners: [req.user._id],
-    editors: [req.user._id] ,
+    editors: [req.user._id],
     members: [req.user._id],
-    categories: req.body.categories || []
-  })
+  });
   newGroup
     .save()
-    .then(group=>res.json({group: group}))
+    .then((group) => res.json({ group: group }))
     .catch((error) => res.status(500).json({ success: false }));
 });
-
 
 /*
 @route  GET api/group/find
@@ -34,12 +32,10 @@ router.post("/add", protectRoute, (req, res) => {
 @access Private
 */
 router.get("/find", protectRoute, (req, res) => {
-  Group
-    .find({ members: req.user._id })
-    .then(groups=>res.json({groups: groups}))
-    .catch(error=>res.status(500).json({success: false}))
+  Group.find({ members: req.user._id })
+    .then((groups) => res.json({ groups: groups }))
+    .catch((error) => res.status(500).json({ success: false }));
 });
-
 
 /*
 @route  POST api/group/invite
@@ -51,21 +47,20 @@ router.get("/find", protectRoute, (req, res) => {
 }
 */
 router.post("/invite", protectRoute, (req, res) => {
-  Group
-    .findById(req.body.groupID)
-    .then(group=>{
-      if (!group.members.includes(req.user._id)) return res.status(403).json({ success: false });
-      
-      group
-        .updateOne({$push: { invites: req.body.userID }}, { new: true })
-        .then(group=>{
-          res.json({success: true});
-        })
-        .catch(error=>res.status(500).json({success: false}))
-    })
-    .catch((error)=>res.status(500).json({success: false}))
-});
+  Group.findById(req.body.groupID)
+    .then((group) => {
+      if (!group.members.includes(req.user._id))
+        return res.status(403).json({ success: false });
 
+      group
+        .updateOne({ $push: { invites: req.body.userID } }, { new: true })
+        .then((group) => {
+          res.json({ success: true });
+        })
+        .catch((error) => res.status(500).json({ success: false }));
+    })
+    .catch((error) => res.status(500).json({ success: false }));
+});
 
 /*
 @route  GET api/group/findInvitation
@@ -73,12 +68,10 @@ router.post("/invite", protectRoute, (req, res) => {
 @access Private
 */
 router.get("/findInvitation", protectRoute, (req, res) => {
-  Group
-    .find({ invites: req.user.email })
-    .then(groups=>res.json({groups: groups}))
-    .catch(error=>res.json({success: false}))
+  Group.find({ invites: req.user.email })
+    .then((groups) => res.json({ groups: groups }))
+    .catch((error) => res.json({ success: false }));
 });
-
 
 /*
 @route  POST api/group/leave
@@ -89,19 +82,36 @@ router.get("/findInvitation", protectRoute, (req, res) => {
 }
 */
 router.post("/leave", protectRoute, (req, res) => {
-  Group
-    .findById(req.body.groupID)
-    .then(group=>{
-      if (group.owners.includes(req.user._id)) res.status(400).json({ success: false, msg: "Owner cannot leave groups. Consider deleting the group instead." })
+  Group.findById(req.body.groupID)
+    .then((group) => {
+      if (group.owners.includes(req.user._id))
+        res.status(400).json({
+          success: false,
+          msg: "Owner cannot leave groups. Consider deleting the group instead.",
+        });
 
       group
-        .updateOne({$pull: {members: req.user._id, owners: req.user._id, editors: req.user._id}}, {new: true})
-        .then(()=>{return res.json({ success: true })})
-        .catch((error)=>{ return res.status(403).json({success: false})})
+        .updateOne(
+          {
+            $pull: {
+              members: req.user._id,
+              owners: req.user._id,
+              editors: req.user._id,
+            },
+          },
+          { new: true }
+        )
+        .then(() => {
+          return res.json({ success: true });
+        })
+        .catch((error) => {
+          return res.status(403).json({ success: false });
+        });
     })
-    .catch((error)=>{return res.status(403).json({success: false})})
+    .catch((error) => {
+      return res.status(403).json({ success: false });
+    });
 });
-
 
 /*
 @route  POST api/group/kick
@@ -113,22 +123,31 @@ router.post("/leave", protectRoute, (req, res) => {
 }
 */
 router.post("/kick", protectRoute, (req, res) => {
-  if (req.body.userID === req.user._id) return res.status(400).json({ success: false });
-  Group
-    .findById(req.body.groupID)
-    .then(group=>{
-      if (!group.owners.includes(req.user._id)) return res.status(403).json({ success: false });
-      
-      group
-        .updateOne({$pull: {members: req.body.userID, owners: req.body.userID, editors: req.body.userID}}, { new: true })
-        .then(group=>{
-          res.json({success: true});
-        })
-        .catch(error=>res.json({success: false}))
-    })
-    .catch((error)=>res.json({success: false}))
-});
+  if (req.body.userID === req.user._id)
+    return res.status(400).json({ success: false });
+  Group.findById(req.body.groupID)
+    .then((group) => {
+      if (!group.owners.includes(req.user._id))
+        return res.status(403).json({ success: false });
 
+      group
+        .updateOne(
+          {
+            $pull: {
+              members: req.body.userID,
+              owners: req.body.userID,
+              editors: req.body.userID,
+            },
+          },
+          { new: true }
+        )
+        .then((group) => {
+          res.json({ success: true });
+        })
+        .catch((error) => res.json({ success: false }));
+    })
+    .catch((error) => res.json({ success: false }));
+});
 
 /*
 @route  POST api/group/acceptInvite/
@@ -139,46 +158,55 @@ router.post("/kick", protectRoute, (req, res) => {
 }
 */
 router.post("/acceptInvite", protectRoute, (req, res) => {
-  Group
-    .findById(req.body.groupID)
-    .then(group=>{
-      if (!group.invites.includes(req.user.email)) return res.status(403).json({ success: false });
-      
+  Group.findById(req.body.groupID)
+    .then((group) => {
+      if (!group.invites.includes(req.user.email))
+        return res.status(403).json({ success: false });
+
       group
-        .updateOne({$pull: { members: req.user._id, editors: req.user._id, owners: req.user._id, invites: req.user.email}}, { new: true })
-        .then(()=>{
+        .updateOne(
+          {
+            $pull: {
+              members: req.user._id,
+              editors: req.user._id,
+              owners: req.user._id,
+              invites: req.user.email,
+            },
+          },
+          { new: true }
+        )
+        .then(() => {
           group
-            .updateOne({$push: { members: req.user._id }}, { new: true })
-            .then(group=>{
-              res.json({success: true});
+            .updateOne({ $push: { members: req.user._id } }, { new: true })
+            .then((group) => {
+              res.json({ success: true });
             })
-            .catch(error=>res.status(500).json({success: false}))
+            .catch((error) => res.status(500).json({ success: false }));
         })
-        .catch(error=>res.status(500).json({success: false}))
+        .catch((error) => res.status(500).json({ success: false }));
     })
-    .catch((error)=>res.status(500).json({success: false}))
+    .catch((error) => res.status(500).json({ success: false }));
 });
 
-
 /*
-@route  DELETE api/group/delete
+@route  post api/group/delete
 @desc   Delete a group with id
 @access Private
 {
     "groupID": "groupID"
 }
 */
-router.delete("/delete", protectRoute, (req, res) => {
-  Group
-    .findById(req.body.groupID)
-    .then(group=>{
-      if (!group.owners.includes(req.user._id)) return res.status(403).json({ success: false });
-      
-      group
-        .remove()
-        .then(()=>{res.json({success: true})})
+router.post("/delete", protectRoute, (req, res) => {
+  Group.findById(req.body.groupID)
+    .then((group) => {
+      if (!group.owners.includes(req.user._id))
+        return res.status(403).json({ success: false });
+
+      group.remove().then(() => {
+        res.json({ success: true });
+      });
     })
-    .catch((error)=>res.status(500).json({success: false}))
+    .catch((error) => res.status(500).json({ success: false }));
 });
 
 /*
@@ -191,25 +219,32 @@ router.delete("/delete", protectRoute, (req, res) => {
 }
 */
 router.post("/editor", protectRoute, (req, res) => {
-  if (req.body.userID == req.user._id) return res.status(400).json({ success: false });
-  Group
-    .findById(req.body.groupID)
-    .then(group=>{
-      if (!group.owners.includes(req.user._id)) return res.status(403).json({ success: false });
-      if (!group.members.includes(req.body.userID)) return res.status(403).json({ success: false });
-      
-      group
-        .updateOne({$pull: { members: req.body.userID, editors: req.body.userID } }, { new: true })
-        .then(()=>{
-          group
-            .updateOne({$push: { members: req.body.userID, editors: req.body.userID } }, { new: true })
-            .then(()=>res.json({success: true}))
-        })
-        .catch(error=>res.status(403).json({success: false}))
-    })
-    .catch((error)=>res.status(403).json({success: false}))
-});
+  if (req.body.userID == req.user._id)
+    return res.status(400).json({ success: false });
+  Group.findById(req.body.groupID)
+    .then((group) => {
+      if (!group.owners.includes(req.user._id))
+        return res.status(403).json({ success: false });
+      if (!group.members.includes(req.body.userID))
+        return res.status(403).json({ success: false });
 
+      group
+        .updateOne(
+          { $pull: { members: req.body.userID, editors: req.body.userID } },
+          { new: true }
+        )
+        .then(() => {
+          group
+            .updateOne(
+              { $push: { members: req.body.userID, editors: req.body.userID } },
+              { new: true }
+            )
+            .then(() => res.json({ success: true }));
+        })
+        .catch((error) => res.status(403).json({ success: false }));
+    })
+    .catch((error) => res.status(403).json({ success: false }));
+});
 
 /*
 @route  POST api/group/member/:id
@@ -221,25 +256,35 @@ router.post("/editor", protectRoute, (req, res) => {
 }
 */
 router.post("/member", protectRoute, (req, res) => {
-  if (req.body.userID == req.user._id) return res.status(400).json({ success: false });
-  Group
-    .findById(req.body.groupID)
-    .then(group=>{
-      if (!group.owners.includes(req.user._id)) return res.status(403).json({ success: false });
-      if (!group.members.includes(req.body.userID)) return res.status(403).json({ success: false });
-      
-      group
-        .updateOne({$pull: { members: req.body.userID, editors: req.body.userID, owners: req.body.userID } }, { new: true })
-        .then(()=>{
-          group
-            .updateOne({$push: { members: req.body.userID } }, { new: true })
-            .then(()=>res.json({success: true}))
-        })
-        .catch(error=>res.status(403).json({success: false}))
-    })
-    .catch((error)=>res.status(403).json({success: false}))
-});
+  if (req.body.userID == req.user._id)
+    return res.status(400).json({ success: false });
+  Group.findById(req.body.groupID)
+    .then((group) => {
+      if (!group.owners.includes(req.user._id))
+        return res.status(403).json({ success: false });
+      if (!group.members.includes(req.body.userID))
+        return res.status(403).json({ success: false });
 
+      group
+        .updateOne(
+          {
+            $pull: {
+              members: req.body.userID,
+              editors: req.body.userID,
+              owners: req.body.userID,
+            },
+          },
+          { new: true }
+        )
+        .then(() => {
+          group
+            .updateOne({ $push: { members: req.body.userID } }, { new: true })
+            .then(() => res.json({ success: true }));
+        })
+        .catch((error) => res.status(403).json({ success: false }));
+    })
+    .catch((error) => res.status(403).json({ success: false }));
+});
 
 /*
 @route  POST api/group/owner/:id
@@ -251,24 +296,43 @@ router.post("/member", protectRoute, (req, res) => {
 }
 */
 router.post("/owner", protectRoute, (req, res) => {
-  if (req.body.userID == req.user._id) return res.status(400).json({ success: false });
-  Group
-    .findById(req.body.groupID)
-    .then(group=>{
-      if (!group.owners.includes(req.user._id)) return res.status(403).json({ success: false });
-      if (!group.members.includes(req.body.userID)) return res.status(403).json({ success: false });
-      
-      group
-        .updateOne({$pull: { members: req.body.userID, editors: req.body.userID, owners: req.body.userID } }, { new: true })
-        .then(()=>{
-          group
-            .updateOne({$push: { members: req.body.userID, editors: req.body.userID, owners: req.body.userID } }, { new: true })
-            .then(()=>res.json({success: true}))
-        })
-        .catch(error=>res.status(403).json({success: false}))
-    })
-    .catch((error)=>res.status(403).json({success: false}))
-});
+  if (req.body.userID == req.user._id)
+    return res.status(400).json({ success: false });
+  Group.findById(req.body.groupID)
+    .then((group) => {
+      if (!group.owners.includes(req.user._id))
+        return res.status(403).json({ success: false });
+      if (!group.members.includes(req.body.userID))
+        return res.status(403).json({ success: false });
 
+      group
+        .updateOne(
+          {
+            $pull: {
+              members: req.body.userID,
+              editors: req.body.userID,
+              owners: req.body.userID,
+            },
+          },
+          { new: true }
+        )
+        .then(() => {
+          group
+            .updateOne(
+              {
+                $push: {
+                  members: req.body.userID,
+                  editors: req.body.userID,
+                  owners: req.body.userID,
+                },
+              },
+              { new: true }
+            )
+            .then(() => res.json({ success: true }));
+        })
+        .catch((error) => res.status(403).json({ success: false }));
+    })
+    .catch((error) => res.status(403).json({ success: false }));
+});
 
 module.exports = router;

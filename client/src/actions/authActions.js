@@ -21,10 +21,7 @@ export const login = (email, password) => (dispatch) => {
     },
   };
 
-  const body =
-    !email || !password
-      ? { id: "60ade47097619a10e8ac63f2" }
-      : JSON.stringify({ email, password });
+  const body = JSON.stringify({ email, password });
 
   axios
     .post("/api/auth/login", body, config)

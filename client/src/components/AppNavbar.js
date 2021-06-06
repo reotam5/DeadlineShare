@@ -5,6 +5,7 @@ import "../css/AppNavbar.css";
 import { useSelector, useDispatch } from "react-redux";
 import Login from "./Login";
 import { logout } from "../actions/authActions";
+import { Link } from "react-router-dom";
 
 function AppNavbar() {
   const auth = useSelector((state) => state.auth);
@@ -79,24 +80,30 @@ function AppNavbar() {
           <Sidenav.Body>
             {auth.user !== null ? (
               <Nav>
-                <Nav.Item
-                  onSelect={toggeleSideBar}
-                  icon={<Icon icon="dashboard" />}
-                >
-                  Dashboard
-                </Nav.Item>
-                <Nav.Item
-                  onSelect={toggeleSideBar}
-                  icon={<Icon icon="calendar" />}
-                >
-                  Calender
-                </Nav.Item>
-                <Nav.Item
-                  onSelect={toggeleSideBar}
-                  icon={<Icon icon="group" />}
-                >
-                  Group
-                </Nav.Item>
+                <Link to="/dashboard">
+                  <Nav.Item
+                    onSelect={toggeleSideBar}
+                    icon={<Icon icon="dashboard" />}
+                  >
+                    Dashboard
+                  </Nav.Item>
+                </Link>
+                <Link to="/calendar">
+                  <Nav.Item
+                    onSelect={toggeleSideBar}
+                    icon={<Icon icon="calendar" />}
+                  >
+                    Calender
+                  </Nav.Item>
+                </Link>
+                <Link to="/group">
+                  <Nav.Item
+                    onSelect={toggeleSideBar}
+                    icon={<Icon icon="group" />}
+                  >
+                    Group
+                  </Nav.Item>
+                </Link>
                 <Nav.Item
                   onSelect={() => {
                     dispatch(logout());

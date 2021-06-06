@@ -3,9 +3,16 @@ import AppNavbar from "./components/AppNavbar";
 import Login from "./components/Login";
 import "rsuite/dist/styles/rsuite-default.css";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { loadUser } from "./actions/authActions";
 import { Notification } from "rsuite";
+import Group from "./components/Group";
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Redirect,
+} from "react-router-dom";
 
 function App() {
   //try loading user
@@ -27,10 +34,20 @@ function App() {
   }, [error]);
 
   return (
-    <div className="App">
-      <AppNavbar />
-      <Login />
-    </div>
+    <Router>
+      <div className="App">
+        <AppNavbar />
+        <Login />
+      </div>
+      <Switch>
+        <Route path="/group">
+          <Group />
+        </Route>
+        <Route path="/">
+          <>Instruction</>
+        </Route>
+      </Switch>
+    </Router>
   );
 }
 

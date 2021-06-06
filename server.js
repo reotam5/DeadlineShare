@@ -22,11 +22,12 @@ mongoose
     console.log(error);
   });
 
+app.use(express.urlencoded({ extended: false }));
 app.use(
   session({
     secret: config.get("sessionSecret"),
-    resave: false,
-    saveUninitialized: true,
+    resave: true,
+    saveUninitialized: false,
   })
 );
 
