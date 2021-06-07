@@ -10,11 +10,46 @@ import {
   FormGroup,
   FormControl,
   ControlLabel,
-  HelpBlock,
+  Divider,
+  InputGroup,
+  Input,
 } from "rsuite";
 import { login, register } from "../actions/authActions";
 import { useSelector, useDispatch } from "react-redux";
-import get_group, { add_group, delete_group } from "../actions/groupActions";
+import get_group, {
+  add_group,
+  BeEditor_group,
+  BeMember_group,
+  BeOwner_group,
+  delete_group,
+  kick_group,
+} from "../actions/groupActions";
+
+const styleCenter = {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  height: "60px",
+  paddingLeft: "10px",
+};
+
+const slimText = {
+  fontSize: "0.666em",
+  color: "#97969B",
+  fontWeight: "lighter",
+  paddingBottom: 5,
+};
+
+const titleStyle = {
+  paddingBottom: 5,
+  whiteSpace: "nowrap",
+  fontWeight: 500,
+};
+
+const dataStyle = {
+  fontSize: "1.2em",
+  fontWeight: 500,
+};
 
 function Group() {
   const dispatch = useDispatch();
@@ -26,32 +61,6 @@ function Group() {
   useEffect(() => {
     dispatch(get_group());
   }, []);
-
-  const styleCenter = {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "60px",
-    paddingLeft: "10px",
-  };
-
-  const slimText = {
-    fontSize: "0.666em",
-    color: "#97969B",
-    fontWeight: "lighter",
-    paddingBottom: 5,
-  };
-
-  const titleStyle = {
-    paddingBottom: 5,
-    whiteSpace: "nowrap",
-    fontWeight: 500,
-  };
-
-  const dataStyle = {
-    fontSize: "1.2em",
-    fontWeight: 500,
-  };
 
   const [targetGroupID, setTargetGroupID] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -140,12 +149,13 @@ function EditGroupModal({
   setIsEditModalOpen,
 }) {
   const dispatch = useDispatch();
-  const [formValue, setFormValue] = useState({ groupName: "" });
   const group = useSelector((state) => state.group);
-  let targetGroup = group.groups.filter(
-    (group) => group._id === targetGroupID
-  )[0];
-  targetGroup = targetGroup ? targetGroup : { name: "", members: [] };
+  const [targetGroup, setTargetGroup] = useState();
+  useEffect(() => {
+    setTargetGroup(
+      group.groups.filter((element) => element._id === targetGroupID)[0]
+    );
+  }, [group, targetGroupID]);
 
   return (
     <div className="modal-container">
@@ -155,30 +165,98 @@ function EditGroupModal({
         onHide={() => setIsEditModalOpen(false)}
       >
         <Modal.Header>
-          <Modal.Title>{targetGroup.name}</Modal.Title>
+          <Modal.Title>{targetGroup ? targetGroup.name : ""}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {targetGroup.members.map((member, index) => (
-            <>{member}</>
-          ))}
+          {targetGroup ? (
+            <div>
+              {targetGroup.memberInfo.map((genre, index) => {
+                return (
+                  <div key={genre.title + "_" + index}>
+                    <Divider>{genre.title}</Divider>
+                    <List hover>
+                      {genre.users.map((user, index2) => {
+                        return (
+                          <List.Item
+                            key={genre.title + "_" + index + "_" + index2}
+                          >
+                            <FlexboxGrid justify="center" align="middle">
+                              <FlexboxGrid.Item colspan={12}>
+                                {user.name}
+                              </FlexboxGrid.Item>
+                              <FlexboxGrid.Item colspan={12}>
+                                <Button
+                                  appearance="primary"
+                                  style={{ margin: "2px" }}
+                                  onClick={() => {
+                                    dispatch(
+                                      BeOwner_group(targetGroupID, user.userID)
+                                    );
+                                  }}
+                                >
+                                  Owner
+                                </Button>
+                                <Button
+                                  appearance="primary"
+                                  style={{ margin: "2px" }}
+                                  onClick={() => {
+                                    dispatch(
+                                      BeEditor_group(targetGroupID, user.userID)
+                                    );
+                                  }}
+                                >
+                                  Editor
+                                </Button>
+                                <Button
+                                  appearance="primary"
+                                  style={{ margin: "2px" }}
+                                  onClick={() => {
+                                    dispatch(
+                                      BeMember_group(targetGroupID, user.userID)
+                                    );
+                                  }}
+                                >
+                                  Member
+                                </Button>
+                                <Button
+                                  appearance="primary"
+                                  color="red"
+                                  style={{ margin: "2px" }}
+                                  onClick={() => {
+                                    dispatch(
+                                      kick_group(targetGroupID, user.userID)
+                                    );
+                                  }}
+                                >
+                                  Kick
+                                </Button>
+                              </FlexboxGrid.Item>
+                            </FlexboxGrid>
+                          </List.Item>
+                        );
+                      })}
+                    </List>
+                  </div>
+                );
+              })}
+              <div>Invite User by their email</div>
+              <InputGroup>
+                <InputGroup.Addon> @</InputGroup.Addon>
+                <Input />
+              </InputGroup>
+            </div>
+          ) : (
+            <></>
+          )}
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            appearance="primary"
-            onClick={() => {
-              dispatch(add_group(formValue.groupName));
-              setIsEditModalOpen(false);
-            }}
-          >
-            Create
-          </Button>
           <Button
             onClick={() => {
               setIsEditModalOpen(false);
             }}
             appearance="subtle"
           >
-            Cancel
+            Close
           </Button>
         </Modal.Footer>
       </Modal>

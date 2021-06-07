@@ -124,11 +124,13 @@ router.post("/leave", protectRoute, (req, res) => {
 */
 router.post("/kick", protectRoute, (req, res) => {
   if (req.body.userID === req.user._id)
-    return res.status(400).json({ success: false });
+    return res.status(400).json({ msg: "You cannot kick yourself" });
   Group.findById(req.body.groupID)
     .then((group) => {
       if (!group.owners.includes(req.user._id))
-        return res.status(403).json({ success: false });
+        return res
+          .status(403)
+          .json({ msg: "Only owners can do this operation." });
 
       group
         .updateOne(
@@ -220,17 +222,25 @@ router.post("/delete", protectRoute, (req, res) => {
 */
 router.post("/editor", protectRoute, (req, res) => {
   if (req.body.userID == req.user._id)
-    return res.status(400).json({ success: false });
+    return res.status(400).json({ msg: "You cannot modyfy yourself." });
   Group.findById(req.body.groupID)
     .then((group) => {
       if (!group.owners.includes(req.user._id))
-        return res.status(403).json({ success: false });
+        return res
+          .status(403)
+          .json({ msg: "Only owners can do this operation." });
       if (!group.members.includes(req.body.userID))
-        return res.status(403).json({ success: false });
+        return res.status(403).json({ msg: "Unknown target user" });
 
       group
         .updateOne(
-          { $pull: { members: req.body.userID, editors: req.body.userID } },
+          {
+            $pull: {
+              members: req.body.userID,
+              editors: req.body.userID,
+              owners: req.body.userID,
+            },
+          },
           { new: true }
         )
         .then(() => {
@@ -257,13 +267,15 @@ router.post("/editor", protectRoute, (req, res) => {
 */
 router.post("/member", protectRoute, (req, res) => {
   if (req.body.userID == req.user._id)
-    return res.status(400).json({ success: false });
+    return res.status(400).json({ msg: "You cannot modyfy yourself." });
   Group.findById(req.body.groupID)
     .then((group) => {
       if (!group.owners.includes(req.user._id))
-        return res.status(403).json({ success: false });
+        return res
+          .status(403)
+          .json({ msg: "Only owners can do this operation." });
       if (!group.members.includes(req.body.userID))
-        return res.status(403).json({ success: false });
+        return res.status(403).json({ msg: "Unknown target user" });
 
       group
         .updateOne(
@@ -297,13 +309,15 @@ router.post("/member", protectRoute, (req, res) => {
 */
 router.post("/owner", protectRoute, (req, res) => {
   if (req.body.userID == req.user._id)
-    return res.status(400).json({ success: false });
+    return res.status(400).json({ msg: "You cannot modyfy yourself." });
   Group.findById(req.body.groupID)
     .then((group) => {
       if (!group.owners.includes(req.user._id))
-        return res.status(403).json({ success: false });
+        return res
+          .status(403)
+          .json({ msg: "Only owners can do this operation." });
       if (!group.members.includes(req.body.userID))
-        return res.status(403).json({ success: false });
+        return res.status(403).json({ msg: "Unknown target user" });
 
       group
         .updateOne(
