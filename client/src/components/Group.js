@@ -17,12 +17,15 @@ import {
 import { login, register } from "../actions/authActions";
 import { useSelector, useDispatch } from "react-redux";
 import get_group, {
+  accept_group,
   add_group,
   BeEditor_group,
   BeMember_group,
   BeOwner_group,
   delete_group,
+  invite_group,
   kick_group,
+  leave_group,
 } from "../actions/groupActions";
 
 const styleCenter = {
@@ -54,7 +57,6 @@ const dataStyle = {
 function Group() {
   const dispatch = useDispatch();
   const group = useSelector((state) => state.group);
-  const auth = useSelector((state) => state.auth);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -67,6 +69,71 @@ function Group() {
 
   return (
     <>
+      {group.invites.length > 0 ? (
+        <>
+          <Divider>Invited groups</Divider>
+          <List hover>
+            {group.invites.map((item, index) => (
+              <List.Item key={item._id} index={index}>
+                <FlexboxGrid>
+                  <FlexboxGrid.Item
+                    colspan={12}
+                    style={{
+                      ...styleCenter,
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div style={titleStyle}>{item["name"]}</div>
+                    <div style={slimText}>
+                      <div>{"Created by " + item["createdBy"]}</div>
+                      <div>{item["createdOn"]}</div>
+                    </div>
+                  </FlexboxGrid.Item>
+                  <FlexboxGrid.Item colspan={6} style={styleCenter}>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={slimText}>Members</div>
+                      <div style={dataStyle}>
+                        {item["members"].length.toLocaleString()}
+                      </div>
+                    </div>
+                  </FlexboxGrid.Item>
+                  <FlexboxGrid.Item
+                    colspan={6}
+                    style={{
+                      ...styleCenter,
+                    }}
+                  >
+                    <Button
+                      appearance="default"
+                      color="blue"
+                      onClick={() => {
+                        dispatch(accept_group(item._id));
+                      }}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      style={{ marginLeft: "5px" }}
+                      appearance="default"
+                      color="red"
+                      onClick={() => {
+                        dispatch(leave_group(item._id));
+                      }}
+                    >
+                      Reject
+                    </Button>
+                  </FlexboxGrid.Item>
+                </FlexboxGrid>
+              </List.Item>
+            ))}
+          </List>
+        </>
+      ) : (
+        <></>
+      )}
+      <Divider>Your groups</Divider>
       <List hover>
         {group.groups.map((item, index) => (
           <List.Item key={item._id} index={index}>
@@ -117,7 +184,7 @@ function Group() {
       </List>
       <IconButton
         style={{
-          position: "absolute",
+          position: "fixed",
           bottom: "0",
           right: "0",
           margin: "15px",
@@ -150,12 +217,17 @@ function EditGroupModal({
 }) {
   const dispatch = useDispatch();
   const group = useSelector((state) => state.group);
+  const auth = useSelector((state) => state.auth);
   const [targetGroup, setTargetGroup] = useState();
   useEffect(() => {
     setTargetGroup(
       group.groups.filter((element) => element._id === targetGroupID)[0]
     );
   }, [group, targetGroupID]);
+  const [inviteEmail, setInviteEmail] = useState();
+  const handleChange = (value) => {
+    setInviteEmail(value);
+  };
 
   return (
     <div className="modal-container">
@@ -171,7 +243,7 @@ function EditGroupModal({
           {targetGroup ? (
             <div>
               {targetGroup.memberInfo.map((genre, index) => {
-                return (
+                return genre.users.length > 0 ? (
                   <div key={genre.title + "_" + index}>
                     <Divider>{genre.title}</Divider>
                     <List hover>
@@ -185,51 +257,67 @@ function EditGroupModal({
                                 {user.name}
                               </FlexboxGrid.Item>
                               <FlexboxGrid.Item colspan={12}>
-                                <Button
-                                  appearance="primary"
-                                  style={{ margin: "2px" }}
-                                  onClick={() => {
-                                    dispatch(
-                                      BeOwner_group(targetGroupID, user.userID)
-                                    );
-                                  }}
-                                >
-                                  Owner
-                                </Button>
-                                <Button
-                                  appearance="primary"
-                                  style={{ margin: "2px" }}
-                                  onClick={() => {
-                                    dispatch(
-                                      BeEditor_group(targetGroupID, user.userID)
-                                    );
-                                  }}
-                                >
-                                  Editor
-                                </Button>
-                                <Button
-                                  appearance="primary"
-                                  style={{ margin: "2px" }}
-                                  onClick={() => {
-                                    dispatch(
-                                      BeMember_group(targetGroupID, user.userID)
-                                    );
-                                  }}
-                                >
-                                  Member
-                                </Button>
-                                <Button
-                                  appearance="primary"
-                                  color="red"
-                                  style={{ margin: "2px" }}
-                                  onClick={() => {
-                                    dispatch(
-                                      kick_group(targetGroupID, user.userID)
-                                    );
-                                  }}
-                                >
-                                  Kick
-                                </Button>
+                                {auth.user &&
+                                targetGroup.owners.includes(auth.user._id) ? (
+                                  <>
+                                    <Button
+                                      appearance="primary"
+                                      style={{ margin: "2px" }}
+                                      onClick={() => {
+                                        dispatch(
+                                          BeOwner_group(
+                                            targetGroupID,
+                                            user.userID
+                                          )
+                                        );
+                                      }}
+                                    >
+                                      Owner
+                                    </Button>
+                                    <Button
+                                      appearance="primary"
+                                      style={{ margin: "2px" }}
+                                      onClick={() => {
+                                        dispatch(
+                                          BeEditor_group(
+                                            targetGroupID,
+                                            user.userID
+                                          )
+                                        );
+                                      }}
+                                    >
+                                      Editor
+                                    </Button>
+                                    <Button
+                                      appearance="primary"
+                                      style={{ margin: "2px" }}
+                                      onClick={() => {
+                                        dispatch(
+                                          BeMember_group(
+                                            targetGroupID,
+                                            user.userID
+                                          )
+                                        );
+                                      }}
+                                    >
+                                      Member
+                                    </Button>
+                                    <Button
+                                      appearance="primary"
+                                      color="red"
+                                      style={{ margin: "2px" }}
+                                      onClick={() => {
+                                        dispatch(
+                                          kick_group(targetGroupID, user.userID)
+                                        );
+                                      }}
+                                    >
+                                      Kick
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <></>
+                                )}
                               </FlexboxGrid.Item>
                             </FlexboxGrid>
                           </List.Item>
@@ -237,13 +325,24 @@ function EditGroupModal({
                       })}
                     </List>
                   </div>
+                ) : (
+                  <></>
                 );
               })}
-              <div>Invite User by their email</div>
+              <Divider>Invite by email</Divider>
               <InputGroup>
-                <InputGroup.Addon> @</InputGroup.Addon>
-                <Input />
+                <InputGroup.Addon>email</InputGroup.Addon>
+                <Input onChange={handleChange} />
               </InputGroup>
+              <Button
+                appearance="primary"
+                onClick={() => {
+                  dispatch(invite_group(targetGroupID, inviteEmail));
+                }}
+                block
+              >
+                Invite
+              </Button>
             </div>
           ) : (
             <></>

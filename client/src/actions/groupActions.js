@@ -63,6 +63,7 @@ const get_group = () => (dispatch) => {
           type: GROUP_LOADED,
           payload: groups,
         });
+        dispatch(get_invites());
       });
     })
     .catch((error) => {
@@ -93,7 +94,6 @@ export const add_group = (name) => (dispatch) => {
 };
 
 export const invite_group = (groupID, userID) => (dispatch) => {
-  dispatch({ type: GROUP_LOADING });
   const config = {
     headers: {
       "Content-Type": "application/json",
@@ -101,18 +101,12 @@ export const invite_group = (groupID, userID) => (dispatch) => {
   };
   const body = JSON.stringify({ groupID, userID });
 
-  axios
-    .post("/api/group/invite", body, config)
-    .then((res) => {
-      dispatch(get_group());
-    })
-    .catch((error) => {
-      dispatch(returnErrors(error.response.data, error.response.status));
-      dispatch({ type: GROUP_LOAD_FAIL });
-    });
+  axios.post("/api/group/invite", body, config).catch((error) => {
+    dispatch(returnErrors(error.response.data, error.response.status));
+  });
 };
 
-export const get_invites = () => (dispatch) => {
+const get_invites = () => (dispatch) => {
   axios
     .get("/api/group/findInvitation")
     .then((res) => {

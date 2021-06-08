@@ -25,7 +25,6 @@ router.get("/findAll", protectRoute, (req, res) => {
     .catch((error) => res.status(500).json({ success: false }));
 });
 
-
 /*
 @route  GET api/assignment/find
 @desc   Get assignments in a group
@@ -38,7 +37,10 @@ router.get("/find", protectRoute, (req, res) => {
   const { groupID } = req.body;
   Group.findById(groupID)
     .then((group) => {
-      if (!group.members.includes(req.user._id)) return res.status(403).json({ success: false, msg: "You do not belong to this group." })
+      if (!group.members.includes(req.user._id))
+        return res
+          .status(403)
+          .json({ success: false, msg: "You do not belong to this group." });
 
       Assignment.find({ groupID: groupID })
         .then((assignments) => res.json({ assignments: assignments }))
@@ -46,7 +48,6 @@ router.get("/find", protectRoute, (req, res) => {
     })
     .catch((error) => res.status(500).json({ success: false }));
 });
-
 
 /*
 @route  POST api/assignment/add
@@ -56,47 +57,44 @@ router.get("/find", protectRoute, (req, res) => {
   "title": "title",
   "description": "description" //optional
   "dueOn": "2021-05-24T23:59:59",
-  "categories": ["category1"] //optional,
   "groupID": "groupID"
 }
 */
 router.post("/add", protectRoute, (req, res) => {
-  const { title, description, dueOn, categories, groupID } = req.body;
+  const { title, description, dueOn, groupID } = req.body;
   if (!title || !dueOn || !groupID) {
     return res
       .status(400)
       .json({ success: false, msg: "Please enter all fields." });
   }
-  Group.findById(groupID).then((group) => {
-    if (!group.editors.includes(req.user._id))
-      return res
-        .status(400)
-        .json({
+  Group.findById(groupID)
+    .then((group) => {
+      if (!group.editors.includes(req.user._id))
+        return res.status(400).json({
           success: false,
           msg: "You don't have permission to create assignment.",
         });
 
-    const newAssignment = new Assignment({
-      title: title,
-      description: description || "",
-      dueOn: new Date(dueOn),
-      categories: categories || [],
-      groupID: groupID,
-    });
+      const newAssignment = new Assignment({
+        title: title,
+        description: description || "",
+        dueOn: new Date(dueOn),
+        groupID: groupID,
+      });
 
-    newAssignment
-      .save()
-      .then((assignment) => res.json({ assignment: assignment }))
-      .catch((error) =>
-        res
-          .status(500)
-          .json({
+      newAssignment
+        .save()
+        .then((assignment) => res.json({ assignment: assignment }))
+        .catch((error) =>
+          res.status(500).json({
             success: false,
             msg: "Error occured when saving assignment.",
           })
-      );
-  })
-  .catch(()=>{ return res.status(500).json({ success: false, msg: "Error occured." }) });
+        );
+    })
+    .catch(() => {
+      return res.status(500).json({ success: false, msg: "Error occured." });
+    });
 });
 
 /*
@@ -108,11 +106,10 @@ router.post("/add", protectRoute, (req, res) => {
   "title": "title",
   "description": "description", //optional
   "dueOn": "2021-05-24T23:59:59",
-  "categories": ["category1"] //optional
 }
 */
 router.post("/update", protectRoute, (req, res) => {
-  const { assignmentID, title, description, dueOn, categories } = req.body;
+  const { assignmentID, title, description, dueOn } = req.body;
 
   if (!title || !dueOn) {
     return res
@@ -123,36 +120,32 @@ router.post("/update", protectRoute, (req, res) => {
   Assignment.findById(assignmentID).then((assignment) => {
     Group.findById(assignment.groupID).then((group) => {
       if (!group.editors.includes(req.user._id))
-        return res
-          .status(403)
-          .json({
-            success: false,
-            msg: "You don't have permission to update assignments.",
-          });
+        return res.status(403).json({
+          success: false,
+          msg: "You don't have permission to update assignments.",
+        });
 
       assignment
-        .updateOne({
-          title: title,
-          description: description || "",
-          dueOn: new Date(dueOn),
-          categories: categories || []
-        }, { new: true })
+        .updateOne(
+          {
+            title: title,
+            description: description || "",
+            dueOn: new Date(dueOn),
+          },
+          { new: true }
+        )
         .then((assignment) => {
           return res.json({ success: true });
         })
         .catch(() => {
-          return res
-            .status(500)
-            .json({
-              success: false,
-              msg: "Error occured when updating an assignment.",
-            });
+          return res.status(500).json({
+            success: false,
+            msg: "Error occured when updating an assignment.",
+          });
         });
     });
   });
 });
-
-
 
 /*
 @route  DELETE api/assignment/delete
@@ -167,12 +160,10 @@ router.delete("/delete", protectRoute, (req, res) => {
   Assignment.findById(assignmentID).then((assignment) => {
     Group.findById(assignment.groupID).then((group) => {
       if (!group.editors.includes(req.user._id))
-        return res
-          .status(403)
-          .json({
-            success: false,
-            msg: "You don't have permission to delete assignments.",
-          });
+        return res.status(403).json({
+          success: false,
+          msg: "You don't have permission to delete assignments.",
+        });
 
       assignment
         .remove()
@@ -180,18 +171,14 @@ router.delete("/delete", protectRoute, (req, res) => {
           return res.json({ success: true });
         })
         .catch(() => {
-          return res
-            .status(500)
-            .json({
-              success: false,
-              msg: "Error occured when deleting an assignment.",
-            });
+          return res.status(500).json({
+            success: false,
+            msg: "Error occured when deleting an assignment.",
+          });
         });
     });
   });
 });
-
-
 
 /*
 @route  POST api/assignment/done
@@ -213,32 +200,31 @@ router.post("/done", protectRoute, (req, res) => {
   Assignment.findById(assignmentID).then((assignment) => {
     Group.findById(assignment.groupID).then((group) => {
       if (!group.members.includes(req.user._id))
-        return res
-          .status(403)
-          .json({
-            success: false,
-            msg: "You don't have permission to update assignments.",
-          });
+        return res.status(403).json({
+          success: false,
+          msg: "You don't have permission to update assignments.",
+        });
 
       assignment
-        .updateOne({ $pull: { doneUsers: req.user._id }}, { new: true })
+        .updateOne({ $pull: { doneUsers: req.user._id } }, { new: true })
         .then(() => {
-          assignment.updateOne({ $push: { doneUsers: req.user._id } }, { new: true }, (error, newAssignment)=>{
-            return res.json({ success: true });
-          })
+          assignment.updateOne(
+            { $push: { doneUsers: req.user._id } },
+            { new: true },
+            (error, newAssignment) => {
+              return res.json({ success: true });
+            }
+          );
         })
         .catch(() => {
-          return res
-            .status(500)
-            .json({
-              success: false,
-              msg: "Error occured when updating an assignment.",
-            });
+          return res.status(500).json({
+            success: false,
+            msg: "Error occured when updating an assignment.",
+          });
         });
     });
   });
 });
-
 
 /*
 @route  POST api/assignment/undone
@@ -260,29 +246,24 @@ router.post("/undone", protectRoute, (req, res) => {
   Assignment.findById(assignmentID).then((assignment) => {
     Group.findById(assignment.groupID).then((group) => {
       if (!group.members.includes(req.user._id))
-        return res
-          .status(403)
-          .json({
-            success: false,
-            msg: "You don't have permission to update assignments.",
-          });
+        return res.status(403).json({
+          success: false,
+          msg: "You don't have permission to update assignments.",
+        });
 
       assignment
-        .updateOne({ $pull: { doneUsers: req.user._id }}, { new: true })
+        .updateOne({ $pull: { doneUsers: req.user._id } }, { new: true })
         .then(() => {
           return res.json({ success: true });
         })
         .catch(() => {
-          return res
-            .status(500)
-            .json({
-              success: false,
-              msg: "Error occured when updating an assignment.",
-            });
+          return res.status(500).json({
+            success: false,
+            msg: "Error occured when updating an assignment.",
+          });
         });
     });
   });
 });
-
 
 module.exports = router;

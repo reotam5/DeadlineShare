@@ -13,6 +13,7 @@ import {
   Route,
   Redirect,
 } from "react-router-dom";
+import CalenderPage from "./components/Calendar";
 
 function App() {
   //try loading user
@@ -42,6 +43,9 @@ function App() {
       <Switch>
         <Route path="/group">
           <Group />
+        </Route>
+        <Route path="/calendar">
+          <CalenderPage />
         </Route>
         <Route path="/">
           <>Instruction</>

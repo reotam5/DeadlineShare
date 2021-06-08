@@ -4,36 +4,31 @@ const Schema = mongoose.Schema;
 const AssignmentSchema = new Schema({
   groupID: {
     type: String,
-    require: true
+    require: true,
   },
   doneUsers: {
     type: [String],
     require: false,
-    default: []
+    default: [],
   },
   title: {
     type: String,
-    require: true
+    require: true,
   },
   description: {
     type: String,
     require: false,
-    default: ""
+    default: "",
   },
   createdOn: {
     type: Date,
-    default: new Date()
+    default: new Date(),
   },
   dueOn: {
     type: Date,
     require: true,
-    default: new Date()
+    default: new Date(),
   },
-  categories: {
-    type: [String],
-    require: false,
-    default: []
-  }
 });
 
 module.exports = Assignment = mongoose.model("Assignment", AssignmentSchema);

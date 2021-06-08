@@ -97,6 +97,7 @@ router.post("/leave", protectRoute, (req, res) => {
               members: req.user._id,
               owners: req.user._id,
               editors: req.user._id,
+              invites: req.user.email,
             },
           },
           { new: true }
