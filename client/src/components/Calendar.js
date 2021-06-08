@@ -16,12 +16,17 @@ import {
   Calendar,
   DatePicker,
   SelectPicker,
+  Whisper,
+  Popover,
+  Badge,
 } from "rsuite";
 import { login, register } from "../actions/authActions";
 import { useSelector, useDispatch } from "react-redux";
 import {
   create_assignment,
   get_assignment,
+  mark_as_done,
+  mark_as_undone,
 } from "../actions/assignmentActions";
 import axios from "axios";
 import get_group from "../actions/groupActions";
@@ -29,10 +34,29 @@ import get_group from "../actions/groupActions";
 function CalenderPage() {
   const group = useSelector((state) => state.group);
   const auth = useSelector((state) => state.auth);
+  const assignment = useSelector((state) => state.assignment);
 
   //create assignment modal
   const [isCreateAssignmentModalOpen, setIsCreateAssignmentModalOpen] =
     useState(false);
+
+  //currently Selected Date
+  const [selectedDate, setSelectedDate] = useState(null);
+  const handleDateSelect = (date) => {
+    setSelectedDate(
+      new Date(
+        `${date.getFullYear()}-${
+          (date.getMonth() + 1 + "").length === 1
+            ? "0" + (date.getMonth() + 1)
+            : date.getMonth() + 1
+        }-${
+          (date.getDate() + "").length === 1
+            ? "0" + date.getDate()
+            : date.getDate()
+        }T${23}:${59}:${59}`
+      )
+    );
+  };
 
   //new assignment form
   const [assignmentCreationForm, setAssignmentCreationForm] = useState({});
@@ -53,9 +77,134 @@ function CalenderPage() {
   useEffect(() => {
     dispatch(get_assignment());
   }, []);
+
+  function getTodoList(date) {
+    const todayAssignments = assignment.assignments.filter((assignment) => {
+      return (
+        !assignment.doneUsers.includes(auth.user._id) &&
+        new Date(assignment.dueOn).getDate() === new Date(date).getDate() &&
+        new Date(assignment.dueOn).getMonth() === new Date(date).getMonth() &&
+        new Date(assignment.dueOn).getFullYear() ===
+          new Date(date).getFullYear()
+      );
+    });
+    if (todayAssignments.length === 0) return [];
+    return todayAssignments.map((todayAssignment) => {
+      return {
+        time: new Date(todayAssignment.dueOn).toLocaleTimeString(),
+        title: todayAssignment.title,
+        _id: todayAssignment._id,
+      };
+    });
+  }
+
+  function getDoneList(date) {
+    const todayAssignments = assignment.assignments.filter((assignment) => {
+      return (
+        assignment.doneUsers.includes(auth.user._id) &&
+        new Date(assignment.dueOn).getDate() === new Date(date).getDate() &&
+        new Date(assignment.dueOn).getMonth() === new Date(date).getMonth() &&
+        new Date(assignment.dueOn).getFullYear() ===
+          new Date(date).getFullYear()
+      );
+    });
+    if (todayAssignments.length === 0) return [];
+    return todayAssignments.map((todayAssignment) => {
+      return {
+        time: new Date(todayAssignment.dueOn).toLocaleTimeString(),
+        title: todayAssignment.title,
+        _id: todayAssignment._id,
+      };
+    });
+  }
+
+  function renderCell(date) {
+    const toDoList = getTodoList(date);
+    const doneList = getDoneList(date);
+    return (
+      <>
+        {toDoList.length > 0 ? (
+          <Whisper
+            placement="auto"
+            trigger="click"
+            speaker={
+              <Popover>
+                <List hover>
+                  {toDoList.map((item, index) => (
+                    <List.Item key={index}>
+                      <b>{item.title}</b> - {item.time}
+                      <Button
+                        color="blue"
+                        size="xs"
+                        style={{ marginLeft: "3px" }}
+                        onClick={() => {
+                          dispatch(mark_as_done({ assignmentID: item._id }));
+                        }}
+                      >
+                        <Icon icon="check" /> Mark as done
+                      </Button>
+                    </List.Item>
+                  ))}
+                </List>
+              </Popover>
+            }
+          >
+            <Badge
+              content={toDoList.length + " to-do"}
+              style={{
+                padding: "0",
+                minWidth: "100%",
+                width: "100%",
+                wordWrap: "break-word",
+              }}
+            />
+          </Whisper>
+        ) : null}
+        {doneList.length > 0 ? (
+          <Whisper
+            placement="auto"
+            trigger="click"
+            speaker={
+              <Popover>
+                <List hover>
+                  {doneList.map((item, index) => (
+                    <List.Item key={index}>
+                      <b>{item.title}</b> - {item.time}
+                      <Button
+                        color="blue"
+                        size="xs"
+                        style={{ marginLeft: "3px" }}
+                        onClick={() => {
+                          dispatch(mark_as_undone({ assignmentID: item._id }));
+                        }}
+                      >
+                        <Icon icon="check" /> Mark as undone
+                      </Button>
+                    </List.Item>
+                  ))}
+                </List>
+              </Popover>
+            }
+          >
+            <Badge
+              content={doneList.length + " done"}
+              style={{
+                padding: "0",
+                background: "#1589FF",
+                minWidth: "100%",
+                width: "100%",
+                wordWrap: "break-word",
+              }}
+            />
+          </Whisper>
+        ) : null}
+      </>
+    );
+  }
+
   return (
     <>
-      <Calendar />
+      <Calendar renderCell={renderCell} onChange={handleDateSelect} />
       <IconButton
         icon={<Icon icon="plus" />}
         color="cyan"
@@ -65,7 +214,6 @@ function CalenderPage() {
           setIsCreateAssignmentModalOpen(true);
         }}
       />
-
       <Modal
         show={isCreateAssignmentModalOpen}
         onHide={() => {
@@ -77,7 +225,11 @@ function CalenderPage() {
           <Modal.Title>New Assignment</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form fluid onChange={handleChange}>
+          <Form
+            fluid
+            onChange={handleChange}
+            formValue={{ dueOn: selectedDate }}
+          >
             <FormGroup>
               <ControlLabel>Title</ControlLabel>
               <FormControl name="title" />
@@ -91,7 +243,7 @@ function CalenderPage() {
               <FormControl
                 accepter={DatePicker}
                 style={{ width: "100%" }}
-                format="DD MMM YYYY hh:mm:ss"
+                format="DD MMM YYYY hh:mm"
                 ranges={ranges}
                 name="dueOn"
               />

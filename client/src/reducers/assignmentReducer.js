@@ -6,7 +6,7 @@ import {
 
 const initialState = {
   isLoading: false,
-  assignments: null,
+  assignments: [],
 };
 
 export default function (state = initialState, action) {
